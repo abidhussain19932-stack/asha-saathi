@@ -37,7 +37,10 @@ def _startup():
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "version": __version__}
+    from . import agent as agent_mod
+    return {"ok": True, "version": __version__, "llm_configured": bool(os.environ.get("GROQ_API_KEY")),
+            "llm_last_error": agent_mod.LAST_LLM_ERROR, "db": "postgres" if os.environ.get("DATABASE_URL") else "sqlite",
+            "telegram": telegram.enabled()}
 
 
 @app.get("/", response_class=HTMLResponse)

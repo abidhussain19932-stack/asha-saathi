@@ -28,6 +28,8 @@ from .db import DB
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
+LAST_LLM_ERROR = ""
+
 INTENTS = ("help", "register_mother", "register_child", "visit_list", "due_list",
            "record_done", "triage", "list", "unknown")
 
@@ -107,7 +109,10 @@ def parse_code(text: str) -> str | None:
 
 _STOP = {"नई", "नया", "गर्भवती", "बच्चा", "बच्ची", "lmp", "जन्म", "गाँव", "गांव", "माँ", "मां", "को", "का", "की",
          "स्थिति", "हो", "गया", "गई", "register", "mother", "child", "village", "new", "pregnant", "baby",
-         "/mother", "/child", "/due", "/done", "/check", "dob", "status", "है", "और", "में", "रहा", "रही"}
+         "/mother", "/child", "/due", "/done", "/check", "dob", "status", "है", "और", "में", "रहा", "रही",
+         "meri", "mera", "meri", "nayi", "naya", "nai", "mareez", "marij", "hai", "ki", "ka", "ko", "aur", "gaon",
+         "mahine", "mahina", "months", "month", "महीने", "महीना", "माह", "मेरी", "मेरा", "मरीज़", "मरीज", "नाम",
+         "naam", "name", "is", "a", "the", "my", "she", "wo", "woh", "वो", "वह"}
 
 
 def _first_name(text: str) -> str | None:
@@ -197,7 +202,10 @@ def llm_parse(text: str, timeout: float = 12.0) -> dict | None:
         if data.get("intent") not in INTENTS:
             return None
         return data
-    except Exception:
+    except Exception as e:  # never log the key; record the failure type for /healthz
+        global LAST_LLM_ERROR
+        LAST_LLM_ERROR = f"{type(e).__name__}: {str(e)[:160]}"
+        print("LLM parse failed:", LAST_LLM_ERROR, flush=True)
         return None
 
 
