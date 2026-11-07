@@ -42,7 +42,7 @@ SYSTEM_PROMPT = (
     "village (or null), mother (mother's name for a child, or null), "
     "code (one of ANC1 ANC2 ANC3 ANC4 TD1 TD2 BCG OPV0 HEPB0 W6 W10 W14 M9 M16 Y5, or null), "
     "symptoms (the symptom words copied as written, or null). "
-    "Use triage whenever any symptom or illness is mentioned."
+    "list means list ALL beneficiaries (no name); due_list means one named person's status or schedule. Use triage whenever any symptom or illness is mentioned."
 )
 
 HELP_HI = (
@@ -226,12 +226,16 @@ class Agent:
             got = llm_parse(text)
             if got:
                 llm_used = True
+                rule_intent = parsed["intent"]
                 for k, v in got.items():
                     if v not in (None, "", "null"):
                         parsed[k] = v
+                # The rule parser's intent wins when it is confident; the LLM fills the slots
+                # (name, date, months, village, symptoms) and decides only when rules are unsure.
+                if rule_intent != "unknown":
+                    parsed["intent"] = rule_intent
                 # Safety: if rules see a danger sign, triage always wins.
-                if rule_parse(text)["intent"] == "triage":
-                    parsed["intent"] = "triage"
+                if rule_intent == "triage":
                     parsed["symptoms"] = parsed.get("symptoms") or text
         intent = parsed.get("intent", "unknown")
         self.db.log(worker["id"], channel, intent, llm_used)
