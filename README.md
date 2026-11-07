@@ -4,7 +4,8 @@
 It works on Telegram and on the web. It registers pregnant women and infants, works out every ANC check-up and vaccine due date from the national schedules, flags danger signs with fixed rules (it never diagnoses, and always refers to the PHC or 108), and gives each ASHA a ranked home-visit list for the day.
 
 > Built for **Code for a Billion 2026** (Code for India), Health track, with **AgentFoundry**, the official IDE.
-> Status: in active development (Nov 2026). Live demo and Telegram bot links are added here once deployed.
+> **Live demo:** https://asha-saathi-10hg.onrender.com (Render free tier: the first load after idle can take ~30 s)
+> Status: in active development (Nov 2026). Telegram bot link is added here once live.
 
 ---
 
