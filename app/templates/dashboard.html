@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASHA Saathi · आशा साथी</title>
+<style>
+  :root { --ink:#1f2933; --muted:#616e7c; --bg:#fbf7f2; --card:#fff; --accent:#c2410c; --red:#b91c1c; --amber:#b45309; --green:#15803d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: "Noto Sans Devanagari", "Noto Sans", system-ui, sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
+  header { background:linear-gradient(120deg,#9a3412,#c2410c 60%,#ea580c); color:#fff; padding:28px 20px; }
+  header h1 { margin:0; font-size:28px; }
+  header p { margin:6px 0 0; opacity:.92; max-width:760px; }
+  main { max-width:1100px; margin:0 auto; padding:20px; display:grid; gap:20px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .stat, .card { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .stat b { display:block; font-size:26px; color:var(--accent); }
+  .stat span { font-size:13px; color:var(--muted); }
+  h2 { margin:0 0 10px; font-size:20px; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+  @media (max-width:820px){ .two { grid-template-columns:1fr; } }
+  .visit { border-left:4px solid var(--accent); padding:8px 12px; margin:8px 0; background:#fff7ed; border-radius:6px; }
+  .visit small { display:block; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #eee; vertical-align:top; }
+  .overdue { color:var(--red); } .due { color:var(--amber); } .upcoming { color:var(--muted); }
+  #log { height:340px; overflow-y:auto; background:#f8fafc; border-radius:8px; padding:10px; font-size:14px; white-space:pre-wrap; }
+  .me { text-align:right; color:#0f172a; margin:6px 0; } .bot { background:#fff; border-radius:8px; padding:8px; margin:6px 0; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  form { display:flex; gap:8px; margin-top:8px; } input { flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:15px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 16px; font-size:15px; cursor:pointer; }
+  .chips button { background:#ffedd5; color:#7c2d12; padding:6px 10px; font-size:13px; margin:3px 3px 0 0; }
+  .note { font-size:13px; color:var(--muted); }
+  footer { text-align:center; font-size:13px; color:var(--muted); padding:20px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ASHA Saathi · आशा साथी</h1>
+  <p>हिंदी में बात करने वाला AI सहायक, ASHA कार्यकर्ताओं के लिए: गर्भवती महिलाओं और बच्चों का पंजीकरण, ANC जाँच और टीकाकरण की तारीखें (MoHFW/UIP), खतरे के संकेतों पर तुरंत रेफ़रल (108/PHC), और रोज़ की गृह भ्रमण सूची।</p>
+  <p class="note" style="color:#ffedd5">A Hindi-first agent for India's ~10.4 lakh ASHA frontline health workers. Never diagnoses: fixed danger-sign rules refer to PHC or 108.{% if bot %} Try it on Telegram: <a style="color:#fff" href="https://t.me/{{ bot }}">@{{ bot }}</a>{% endif %}</p>
+</header>
+<main>
+  <section>
+    <h2>Live usage (from this deployment's database)</h2>
+    <div class="grid">
+      <div class="stat"><b>{{ stats.workers_real }}</b><span>real test users (Telegram + web)</span></div>
+      <div class="stat"><b>{{ stats.messages_non_demo }}</b><span>messages from test users</span></div>
+      <div class="stat"><b>{{ stats.triage_checks }}</b><span>danger-sign checks ({{ stats.triage_red }} red)</span></div>
+      <div class="stat"><b>{{ stats.mothers }}</b><span>pregnant women registered*</span></div>
+      <div class="stat"><b>{{ stats.children }}</b><span>children registered*</span></div>
+      <div class="stat"><b>{{ stats.events_recorded }}</b><span>check-ups / doses recorded*</span></div>
+    </div>
+    <p class="note">* includes the fictional demo dataset below. All beneficiary data in this demo is synthetic. Do not enter real patient data.</p>
+  </section>
+
+  <div class="two">
+    <section class="card">
+      <h2>आज की गृह भ्रमण सूची · Today's visits ({{ today.strftime('%d-%m-%Y') }})</h2>
+      <p class="note">Demo ASHA "सुनीता" (synthetic data)</p>
+      {% for it in visits %}
+        <div class="visit"><b>{{ '🤰' if it.beneficiary.kind == 'mother' else '👶' }} {{ it.beneficiary.name }}</b> · {{ it.beneficiary.village }}
+          {% for r in it.reasons %}<small>{{ r }}</small>{% endfor %}
+        </div>
+      {% else %}
+        <p>आज कोई ज़रूरी भ्रमण नहीं।</p>
+      {% endfor %}
+    </section>
+
+    <section class="card">
+      <h2>Try the agent · एजेंट से बात करें</h2>
+      <div id="log"><div class="bot">🙏 नमस्ते! नीचे लिखें या एक उदाहरण चुनें। (आपका अपना अलग डेमो खाता बनेगा)</div></div>
+      <div class="chips">
+        <button onclick="ask('मदद')">मदद</button>
+        <button onclick="ask('नई गर्भवती कमला LMP 5 महीने गाँव रामपुर')">नई गर्भवती</button>
+        <button onclick="ask('कमला की स्थिति')">स्थिति</button>
+        <button onclick="ask('कमला को तेज़ सिरदर्द और धुंधला दिख रहा है, बीपी 150/100')">खतरे के संकेत</button>
+        <button onclick="ask('नया बच्चा चिंटू जन्म 2 महीने')">नया बच्चा</button>
+        <button onclick="ask('आज की सूची')">आज की सूची</button>
+      </div>
+      <form onsubmit="event.preventDefault(); ask(document.getElementById('q').value);">
+        <input id="q" placeholder="यहाँ लिखें... e.g. सीता ANC2 हो गया" autocomplete="off">
+        <button>भेजें</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>लाभार्थी · Beneficiaries (demo ASHA)</h2>
+    <table>
+      <tr><th>Name</th><th>Village</th><th>Status</th><th>Action needed</th><th>Next</th></tr>
+      {% for p in people %}
+      <tr>
+        <td>{{ '🤰' if p.b.kind == 'mother' else '👶' }} {{ p.b.name }}</td>
+        <td>{{ p.b.village }}</td>
+        <td>{{ p.info }}</td>
+        <td>{% for r in p.next %}<div class="{{ r.status }}">{{ r.name_en }} ({{ r.status }})</div>{% else %}-{% endfor %}</td>
+        <td class="upcoming">{% if p.upcoming %}{{ p.upcoming.name_en }} from {{ p.upcoming.start.strftime('%d-%m-%Y') }}{% else %}-{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </section>
+
+  <section class="card note">
+    <b>Sources.</b> ANC: MoHFW Guidelines for Antenatal Care (4 visits: ≤12, 14–26, 28–34, 36+ weeks). Immunisation: MoHFW National Immunization Schedule (UIP) as on U-WIN. Danger signs: MoHFW ASHA modules 6–7 and HBNC guidelines. ASHA count: MoRD/PIB, Sep 2026 (10.40 lakh).
+    ASHA Saathi does not diagnose or prescribe. In an emergency call 108.
+  </section>
+</main>
+<footer>ASHA Saathi v{{ version }} · MIT licence · Built for Code for a Billion 2026 with AgentFoundry · <a href="https://github.com/abidhussain19932-stack/asha-saathi">GitHub</a></footer>
+<script>
+  const sess = localStorage.getItem('asha_sess') || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+  localStorage.setItem('asha_sess', sess);
+  const log = document.getElementById('log');
+  function add(cls, text){ const d=document.createElement('div'); d.className=cls; d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; }
+  async function ask(t){
+    t=(t||'').trim(); if(!t) return; document.getElementById('q').value=''; add('me', t);
+    try { const r = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,session:sess})});
+      const j = await r.json(); add('bot', j.reply || 'error'); } catch(e){ add('bot','नेटवर्क त्रुटि'); }
+  }
+</script>
+</body>
+</html>

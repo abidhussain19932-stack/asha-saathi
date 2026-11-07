@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: asha-saathi
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      - key: PUBLIC_URL
+        sync: false
+      - key: DATABASE_URL   # Neon free Postgres; leave empty to use SQLite
+        sync: false
+      - key: ID_SALT
+        generateValue: true
