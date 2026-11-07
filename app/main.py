@@ -75,7 +75,8 @@ def api_chat(body: ChatIn):
     if not body.text.strip():
         raise HTTPException(400, "empty")
     sess = (body.session or "anon")[:64]
-    worker = db.worker(f"web:{sess}", "web tester")
+    # sessions named dev-* are the developer's own smoke tests: counted as demo, not as users
+    worker = db.worker(f"web:{sess}", "web tester", is_demo=1 if sess.startswith("dev-") else 0)
     reply = agent.handle(worker, body.text[:600], channel="web")
     return {"reply": reply}
 
